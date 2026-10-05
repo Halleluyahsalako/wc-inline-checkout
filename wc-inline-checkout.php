@@ -406,6 +406,17 @@ class WC_Inline_Checkout {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
 		}
 
+		if ( ! empty( $result['overpaid'] ) ) {
+			$order->add_order_note(
+				sprintf(
+					/* translators: 1: amount expected, 2: amount received */
+					__( 'Overpayment. Expected %1$s, received %2$s. Consider refunding the difference.', 'wc-inline-checkout' ),
+					wc_price( $result['expected'] ),
+					wc_price( $result['paid'] )
+				)
+			);
+		}
+
 		$order->payment_complete( $result['gateway_reference'] );
 		$order->add_order_note(
 			sprintf(
