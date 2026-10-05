@@ -3,7 +3,7 @@
  * Plugin Name:       Inline Checkout for WooCommerce
  * Plugin URI:        https://github.com/Halleluyahsalako/wc-inline-checkout
  * Description:       Buy Now and one page checkout for WooCommerce, with inline Paystack and Flutterwave payment. Transactions are verified server side against the gateway before an order is completed.
- * Version:           2.0.0
+ * Version:           2.1.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Salako Halleluyah
@@ -28,6 +28,7 @@ define( 'WCIC_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WCIC_URL', plugin_dir_url( __FILE__ ) );
 
 require_once WCIC_DIR . 'includes/class-wcic-verifier.php';
+require_once WCIC_DIR . 'includes/class-wcic-webhooks.php';
 
 /**
  * Buy Now plus an inline checkout on the product page, with in page payment.
@@ -454,6 +455,16 @@ class WC_Inline_Checkout {
 
 add_action( 'plugins_loaded', function () {
 	new WC_Inline_Checkout();
+	WCIC_Webhooks::init();
+} );
+
+register_activation_hook( WCIC_FILE, array( 'WCIC_Webhooks', 'install' ) );
+
+register_deactivation_hook( WCIC_FILE, function () {
+	$timestamp = wp_next_scheduled( 'wcic_prune_events' );
+	if ( $timestamp ) {
+		wp_unschedule_event( $timestamp, 'wcic_prune_events' );
+	}
 } );
 
 // Tell WooCommerce this plugin is safe with High Performance Order Storage.

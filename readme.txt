@@ -4,7 +4,7 @@ Tags: woocommerce, checkout, one page checkout, buy now, paystack, flutterwave
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 2.0.0
+Stable tag: 2.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -21,6 +21,16 @@ WooCommerce still creates the order through its own checkout process, so taxes, 
 When a payment widget reports success, the browser is not believed. The server checks the reference against the one it issued for that order, then calls the gateway API directly with the secret key to confirm the transaction status, currency and amount before completing the order.
 
 A failed verification leaves the order unpaid and records the reason in the order notes.
+
+= Webhooks =
+
+Payment confirmation does not depend on the customer's browser reaching your site. Each gateway can post directly to the plugin, which authenticates the sender, then ignores the payload and asks the gateway API what actually happened before completing anything.
+
+Paystack webhooks are authenticated by recomputing the HMAC SHA512 signature over the raw request body and comparing it with hash_equals. Flutterwave webhooks are authenticated against the secret hash you set in its dashboard; if no hash is configured the plugin refuses the request rather than accepting an empty comparison.
+
+Repeat deliveries are expected and handled. Every event is recorded against a unique index, so a webhook delivered three times completes an order once. Records older than thirty days are pruned automatically.
+
+The URLs to paste into each dashboard are shown in the plugin settings.
 
 = Requirements =
 
@@ -47,6 +57,16 @@ Some themes replace the single product Add to Cart with their own AJAX. Dequeue 
 Yes, and it declares compatibility.
 
 == Changelog ==
+
+= 2.1.0 =
+* Added webhook endpoints for Paystack and Flutterwave, so payment confirmation no longer depends on the customer's browser returning to the site.
+* Paystack webhooks are authenticated by HMAC SHA512 over the raw body, compared with hash_equals.
+* Flutterwave webhooks are authenticated against the configured secret hash, and are refused outright when no hash is set.
+* Webhook payloads are never trusted for amounts. Every event triggers a fresh server to server verification.
+* Repeat webhook deliveries are deduplicated through a unique index, so an event delivered more than once completes an order once.
+* Paystack transactions now carry an environment check: a test transaction cannot complete an order on a live shop, and the reverse is also refused.
+* Amount comparison changed from strict equality to "not short", in line with Flutterwave's own guidance, so a rounded or over paid amount no longer fails a correct payment.
+* Overpayments are completed and recorded in an order note asking for the difference to be refunded.
 
 = 2.0.0 =
 * Payments are now verified server side against the Paystack and Flutterwave APIs, checking status, currency and amount before the order is completed. The previous release trusted the browser callback.

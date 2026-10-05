@@ -73,11 +73,25 @@ abstract class WCIC_Verifier {
 	}
 
 	/**
-	 * Compare the paid amount with the order total, allowing for floating point
-	 * noise but nothing more. An underpayment must never complete an order.
+	 * Compare the paid amount with the order total.
+	 *
+	 * The test is "not short", not "exactly equal". Flutterwave's own guidance
+	 * is to accept an amount greater than or equal to the expected one and
+	 * refund any excess, and converted currencies round in ways that make
+	 * strict equality reject payments that were perfectly good. The tolerance
+	 * absorbs floating point noise and nothing larger: an underpayment of one
+	 * full minor unit still fails.
 	 */
 	protected function amounts_match( $paid, $expected ) {
-		return abs( (float) $paid - (float) $expected ) < 0.01;
+		return ( (float) $paid + 0.01 ) >= (float) $expected;
+	}
+
+	/**
+	 * True when the paid amount is meaningfully above the order total, so the
+	 * caller can leave a note asking somebody to refund the difference.
+	 */
+	protected function is_overpayment( $paid, $expected ) {
+		return (float) $paid > ( (float) $expected + 1 );
 	}
 
 	protected function get( $url, array $headers ) {
@@ -140,6 +154,31 @@ class WCIC_Paystack_Verifier extends WCIC_Verifier {
 		return (int) round( (float) $total * 100 );
 	}
 
+	/**
+	 * Check a webhook signature without handing the secret key out.
+	 *
+	 * Paystack signs the raw request body with HMAC SHA512, so the signature is
+	 * evidence about that exact payload rather than about the sender alone.
+	 *
+	 * @param string $raw  Raw request body, exactly as received.
+	 * @param string $sent Value of the x-paystack-signature header.
+	 * @return bool
+	 */
+	public function signature_is_valid( $raw, $sent ) {
+		$secret = $this->secret_key();
+
+		if ( '' === $secret || '' === (string) $sent ) {
+			return false;
+		}
+
+		return hash_equals( hash_hmac( 'sha512', (string) $raw, $secret ), (string) $sent );
+	}
+
+	/** True when a secret key is present, so callers can refuse rather than guess. */
+	public function is_configured() {
+		return '' !== $this->secret_key();
+	}
+
 	public function verify( $reference, WC_Order $order ) {
 		$secret = $this->secret_key();
 
@@ -164,6 +203,19 @@ class WCIC_Paystack_Verifier extends WCIC_Verifier {
 		}
 
 		$data = $body['data'];
+
+		// Paystack reports which environment the transaction belongs to. A test
+		// transaction reaching a live shop means test keys are deployed, and the
+		// order must not complete on imaginary money.
+		$domain = strtolower( (string) ( $data['domain'] ?? '' ) );
+
+		if ( 'live' === $domain && $this->test_mode() ) {
+			return new WP_Error( 'wcic_environment', __( 'A live transaction was returned while the gateway is in test mode.', 'wc-inline-checkout' ) );
+		}
+
+		if ( 'test' === $domain && ! $this->test_mode() ) {
+			return new WP_Error( 'wcic_environment', __( 'A test transaction was returned while the gateway is in live mode.', 'wc-inline-checkout' ) );
+		}
 
 		if ( 'success' !== ( $data['status'] ?? '' ) ) {
 			return new WP_Error(
@@ -193,7 +245,12 @@ class WCIC_Paystack_Verifier extends WCIC_Verifier {
 			return new WP_Error( 'wcic_amount', __( 'The amount paid does not match the order total.', 'wc-inline-checkout' ) );
 		}
 
-		return array( 'gateway_reference' => sanitize_text_field( (string) ( $data['reference'] ?? $reference ) ) );
+		return array(
+			'gateway_reference' => sanitize_text_field( (string) ( $data['reference'] ?? $reference ) ),
+			'paid'              => $paid,
+			'expected'          => $expected,
+			'overpaid'          => $this->is_overpayment( $paid, $expected ),
+		);
 	}
 }
 
@@ -264,12 +321,18 @@ class WCIC_Flutterwave_Verifier extends WCIC_Verifier {
 
 		// Flutterwave reports both amount and amount_settled. Compare against
 		// charged_amount where present, since settlement is net of fees.
-		$paid = isset( $data['charged_amount'] ) ? (float) $data['charged_amount'] : (float) ( $data['amount'] ?? 0 );
+		$paid     = isset( $data['charged_amount'] ) ? (float) $data['charged_amount'] : (float) ( $data['amount'] ?? 0 );
+		$expected = (float) $order->get_total();
 
-		if ( ! $this->amounts_match( $paid, $order->get_total() ) ) {
+		if ( ! $this->amounts_match( $paid, $expected ) ) {
 			return new WP_Error( 'wcic_amount', __( 'The amount paid does not match the order total.', 'wc-inline-checkout' ) );
 		}
 
-		return array( 'gateway_reference' => sanitize_text_field( (string) ( $data['tx_ref'] ?? $reference ) ) );
+		return array(
+			'gateway_reference' => sanitize_text_field( (string) ( $data['tx_ref'] ?? $reference ) ),
+			'paid'              => $paid,
+			'expected'          => $expected,
+			'overpaid'          => $this->is_overpayment( $paid, $expected ),
+		);
 	}
 }
