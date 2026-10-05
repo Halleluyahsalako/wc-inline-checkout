@@ -120,21 +120,21 @@ class WCIC_Webhooks {
 		$sent = (string) $request->get_header( 'x_paystack_signature' );
 
 		if ( '' === $sent ) {
-			return new WP_Error( 'wcic_no_signature', __( 'Missing signature.', 'wc-inline-checkout' ), 401 );
+			return new WP_Error( 'wcic_no_signature', __( 'Missing signature.', 'inline-checkout-for-woocommerce' ), 401 );
 		}
 
 		$verifier = WCIC_Verifier::for_gateway( 'paystack' );
 
 		if ( ! $verifier instanceof WCIC_Paystack_Verifier ) {
-			return new WP_Error( 'wcic_no_gateway', __( 'Paystack is not configured.', 'wc-inline-checkout' ), 503 );
+			return new WP_Error( 'wcic_no_gateway', __( 'Paystack is not configured.', 'inline-checkout-for-woocommerce' ), 503 );
 		}
 
 		if ( ! $verifier->is_configured() ) {
-			return new WP_Error( 'wcic_no_secret', __( 'Paystack secret key is not configured.', 'wc-inline-checkout' ), 503 );
+			return new WP_Error( 'wcic_no_secret', __( 'Paystack secret key is not configured.', 'inline-checkout-for-woocommerce' ), 503 );
 		}
 
 		if ( ! $verifier->signature_is_valid( $raw, $sent ) ) {
-			return new WP_Error( 'wcic_bad_signature', __( 'Signature does not match.', 'wc-inline-checkout' ), 401 );
+			return new WP_Error( 'wcic_bad_signature', __( 'Signature does not match.', 'inline-checkout-for-woocommerce' ), 401 );
 		}
 
 		return true;
@@ -156,13 +156,13 @@ class WCIC_Webhooks {
 		// With no hash configured, an empty comparison would accept anything.
 		// Refusing is the only safe default.
 		if ( '' === $expected ) {
-			return new WP_Error( 'wcic_no_secret', __( 'No Flutterwave secret hash is configured.', 'wc-inline-checkout' ), 503 );
+			return new WP_Error( 'wcic_no_secret', __( 'No Flutterwave secret hash is configured.', 'inline-checkout-for-woocommerce' ), 503 );
 		}
 
 		$sent = (string) $request->get_header( 'verif_hash' );
 
 		if ( '' === $sent || ! hash_equals( $expected, $sent ) ) {
-			return new WP_Error( 'wcic_bad_signature', __( 'Secret hash does not match.', 'wc-inline-checkout' ), 401 );
+			return new WP_Error( 'wcic_bad_signature', __( 'Secret hash does not match.', 'inline-checkout-for-woocommerce' ), 401 );
 		}
 
 		return true;
@@ -248,7 +248,7 @@ class WCIC_Webhooks {
 				$order->add_order_note(
 					sprintf(
 						/* translators: %s: reason the verification failed */
-						__( 'Webhook verification failed: %s', 'wc-inline-checkout' ),
+						__( 'Webhook verification failed: %s', 'inline-checkout-for-woocommerce' ),
 						$result->get_error_message()
 					)
 				);
@@ -260,14 +260,14 @@ class WCIC_Webhooks {
 			$order->add_order_note(
 				sprintf(
 					/* translators: 1: amount expected, 2: amount received */
-					__( 'Overpayment. Expected %1$s, received %2$s. Consider refunding the difference.', 'wc-inline-checkout' ),
+					__( 'Overpayment. Expected %1$s, received %2$s. Consider refunding the difference.', 'inline-checkout-for-woocommerce' ),
 					wc_price( $result['expected'] ),
 					wc_price( $result['paid'] )
 				)
 			);
 		}
 
-		$order->add_order_note( __( 'Payment confirmed by gateway webhook.', 'wc-inline-checkout' ) );
+		$order->add_order_note( __( 'Payment confirmed by gateway webhook.', 'inline-checkout-for-woocommerce' ) );
 		$order->payment_complete( $result['gateway_reference'] );
 	}
 

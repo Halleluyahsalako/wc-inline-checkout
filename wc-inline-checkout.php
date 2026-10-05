@@ -10,7 +10,7 @@
  * Author URI:        https://halleluyahsalako.github.io
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:       wc-inline-checkout
+ * Text Domain:       inline-checkout-for-woocommerce
  * Domain Path:       /languages
  * WC requires at least: 6.0
  * WC tested up to:   9.4
@@ -84,12 +84,12 @@ class WC_Inline_Checkout {
 	public function missing_woocommerce_notice() {
 		printf(
 			'<div class="notice notice-error"><p>%s</p></div>',
-			esc_html__( 'Inline Checkout for WooCommerce requires WooCommerce to be installed and active.', 'wc-inline-checkout' )
+			esc_html__( 'Inline Checkout for WooCommerce requires WooCommerce to be installed and active.', 'inline-checkout-for-woocommerce' )
 		);
 	}
 
 	public function load_textdomain() {
-		load_plugin_textdomain( 'wc-inline-checkout', false, dirname( plugin_basename( WCIC_FILE ) ) . '/languages' );
+		load_plugin_textdomain( 'inline-checkout-for-woocommerce', false, dirname( plugin_basename( WCIC_FILE ) ) . '/languages' );
 	}
 
 	/* ---------------------------------------------------------------------
@@ -106,14 +106,14 @@ class WC_Inline_Checkout {
 		printf(
 			'<button type="button" class="button alt wcic-buy-now" data-product-id="%1$s">%2$s</button>',
 			esc_attr( $product->get_id() ),
-			esc_html( apply_filters( 'wcic_buy_now_label', __( 'Buy Now', 'wc-inline-checkout' ) ) )
+			esc_html( apply_filters( 'wcic_buy_now_label', __( 'Buy Now', 'inline-checkout-for-woocommerce' ) ) )
 		);
 	}
 
 	public function render_checkout_container() {
 		?>
 		<div id="wcic-container" class="wcic-container" hidden>
-			<h2 class="wcic-heading"><?php esc_html_e( 'Checkout', 'wc-inline-checkout' ); ?></h2>
+			<h2 class="wcic-heading"><?php esc_html_e( 'Checkout', 'inline-checkout-for-woocommerce' ); ?></h2>
 			<div id="wcic-form-wrapper"></div>
 		</div>
 		<?php
@@ -147,8 +147,8 @@ class WC_Inline_Checkout {
 				'nonce'        => wp_create_nonce( 'wcic' ),
 				'reviewNonce'  => wp_create_nonce( 'update-order-review' ),
 				'i18n'         => array(
-					'genericError' => __( 'Something went wrong. Please try again.', 'wc-inline-checkout' ),
-					'verifying'    => __( 'Verifying payment, please wait.', 'wc-inline-checkout' ),
+					'genericError' => __( 'Something went wrong. Please try again.', 'inline-checkout-for-woocommerce' ),
+					'verifying'    => __( 'Verifying payment, please wait.', 'inline-checkout-for-woocommerce' ),
 				),
 			)
 		);
@@ -206,7 +206,7 @@ class WC_Inline_Checkout {
 		$product = $product_id ? wc_get_product( $product_id ) : false;
 
 		if ( ! $product || ! $product->is_purchasable() || ! $product->is_in_stock() ) {
-			wp_send_json_error( array( 'message' => __( 'This product cannot be purchased.', 'wc-inline-checkout' ) ) );
+			wp_send_json_error( array( 'message' => __( 'This product cannot be purchased.', 'inline-checkout-for-woocommerce' ) ) );
 		}
 
 		if ( ! WC()->cart ) {
@@ -216,7 +216,7 @@ class WC_Inline_Checkout {
 		WC()->cart->empty_cart();
 
 		if ( ! WC()->cart->add_to_cart( $product_id, max( 1, $quantity ) ) ) {
-			wp_send_json_error( array( 'message' => __( 'Could not add this product to the cart.', 'wc-inline-checkout' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Could not add this product to the cart.', 'inline-checkout-for-woocommerce' ) ) );
 		}
 
 		ob_start();
@@ -308,18 +308,18 @@ class WC_Inline_Checkout {
 		$order = $order_id ? wc_get_order( $order_id ) : false;
 
 		if ( ! $order || ! $this->current_user_owns_order( $order ) ) {
-			wp_send_json_error( array( 'message' => __( 'Order not found.', 'wc-inline-checkout' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Order not found.', 'inline-checkout-for-woocommerce' ) ) );
 		}
 
 		if ( ! in_array( $method, $this->supported_gateways, true ) ) {
-			wp_send_json_error( array( 'message' => __( 'This payment method is not handled inline.', 'wc-inline-checkout' ) ) );
+			wp_send_json_error( array( 'message' => __( 'This payment method is not handled inline.', 'inline-checkout-for-woocommerce' ) ) );
 		}
 
 		$verifier   = WCIC_Verifier::for_gateway( $method );
 		$public_key = $verifier ? $verifier->public_key() : '';
 
 		if ( ! $public_key ) {
-			wp_send_json_error( array( 'message' => __( 'This gateway is not fully configured.', 'wc-inline-checkout' ) ) );
+			wp_send_json_error( array( 'message' => __( 'This gateway is not fully configured.', 'inline-checkout-for-woocommerce' ) ) );
 		}
 
 		$reference = $verifier->build_reference( $order_id );
@@ -359,11 +359,11 @@ class WC_Inline_Checkout {
 		$order = $order_id ? wc_get_order( $order_id ) : false;
 
 		if ( ! $order || ! $reference ) {
-			wp_send_json_error( array( 'message' => __( 'Missing order or reference.', 'wc-inline-checkout' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Missing order or reference.', 'inline-checkout-for-woocommerce' ) ) );
 		}
 
 		if ( ! $this->current_user_owns_order( $order ) ) {
-			wp_send_json_error( array( 'message' => __( 'Order not found.', 'wc-inline-checkout' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Order not found.', 'inline-checkout-for-woocommerce' ) ) );
 		}
 
 		// Already paid. Treat a repeat call as success rather than an error,
@@ -380,14 +380,14 @@ class WC_Inline_Checkout {
 		// The reference must be the one we issued for this order. Without this
 		// check a valid transaction from any other order could be replayed here.
 		if ( ! hash_equals( (string) $order->get_meta( '_wcic_reference' ), $reference ) ) {
-			wp_send_json_error( array( 'message' => __( 'This reference does not belong to this order.', 'wc-inline-checkout' ) ) );
+			wp_send_json_error( array( 'message' => __( 'This reference does not belong to this order.', 'inline-checkout-for-woocommerce' ) ) );
 		}
 
 		$gateway  = (string) $order->get_meta( '_wcic_gateway' );
 		$verifier = WCIC_Verifier::for_gateway( $gateway );
 
 		if ( ! $verifier ) {
-			wp_send_json_error( array( 'message' => __( 'Unknown gateway for this order.', 'wc-inline-checkout' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Unknown gateway for this order.', 'inline-checkout-for-woocommerce' ) ) );
 		}
 
 		$result = $verifier->verify( $reference, $order );
@@ -396,7 +396,7 @@ class WC_Inline_Checkout {
 			$order->add_order_note(
 				sprintf(
 					/* translators: 1: gateway name, 2: error message */
-					__( 'Inline Checkout could not verify the payment with %1$s: %2$s', 'wc-inline-checkout' ),
+					__( 'Inline Checkout could not verify the payment with %1$s: %2$s', 'inline-checkout-for-woocommerce' ),
 					$verifier->slug(),
 					$result->get_error_message()
 				)
@@ -410,7 +410,7 @@ class WC_Inline_Checkout {
 			$order->add_order_note(
 				sprintf(
 					/* translators: 1: amount expected, 2: amount received */
-					__( 'Overpayment. Expected %1$s, received %2$s. Consider refunding the difference.', 'wc-inline-checkout' ),
+					__( 'Overpayment. Expected %1$s, received %2$s. Consider refunding the difference.', 'inline-checkout-for-woocommerce' ),
 					wc_price( $result['expected'] ),
 					wc_price( $result['paid'] )
 				)
@@ -421,7 +421,7 @@ class WC_Inline_Checkout {
 		$order->add_order_note(
 			sprintf(
 				/* translators: 1: gateway name, 2: transaction reference */
-				__( 'Payment verified server side with %1$s. Reference: %2$s', 'wc-inline-checkout' ),
+				__( 'Payment verified server side with %1$s. Reference: %2$s', 'inline-checkout-for-woocommerce' ),
 				$verifier->slug(),
 				$result['gateway_reference']
 			)

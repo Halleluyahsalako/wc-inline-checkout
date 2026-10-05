@@ -104,14 +104,14 @@ abstract class WCIC_Verifier {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			return new WP_Error( 'wcic_http', __( 'Could not reach the payment gateway.', 'wc-inline-checkout' ) );
+			return new WP_Error( 'wcic_http', __( 'Could not reach the payment gateway.', 'inline-checkout-for-woocommerce' ) );
 		}
 
 		$code = wp_remote_retrieve_response_code( $response );
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
 
 		if ( 200 !== (int) $code || ! is_array( $body ) ) {
-			return new WP_Error( 'wcic_http', __( 'The payment gateway returned an unexpected response.', 'wc-inline-checkout' ) );
+			return new WP_Error( 'wcic_http', __( 'The payment gateway returned an unexpected response.', 'inline-checkout-for-woocommerce' ) );
 		}
 
 		return $body;
@@ -183,7 +183,7 @@ class WCIC_Paystack_Verifier extends WCIC_Verifier {
 		$secret = $this->secret_key();
 
 		if ( ! $secret ) {
-			return new WP_Error( 'wcic_config', __( 'Paystack secret key is not configured.', 'wc-inline-checkout' ) );
+			return new WP_Error( 'wcic_config', __( 'Paystack secret key is not configured.', 'inline-checkout-for-woocommerce' ) );
 		}
 
 		$body = $this->get(
@@ -199,7 +199,7 @@ class WCIC_Paystack_Verifier extends WCIC_Verifier {
 		}
 
 		if ( empty( $body['status'] ) || empty( $body['data'] ) ) {
-			return new WP_Error( 'wcic_declined', __( 'Paystack did not recognise this transaction.', 'wc-inline-checkout' ) );
+			return new WP_Error( 'wcic_declined', __( 'Paystack did not recognise this transaction.', 'inline-checkout-for-woocommerce' ) );
 		}
 
 		$data = $body['data'];
@@ -210,11 +210,11 @@ class WCIC_Paystack_Verifier extends WCIC_Verifier {
 		$domain = strtolower( (string) ( $data['domain'] ?? '' ) );
 
 		if ( 'live' === $domain && $this->test_mode() ) {
-			return new WP_Error( 'wcic_environment', __( 'A live transaction was returned while the gateway is in test mode.', 'wc-inline-checkout' ) );
+			return new WP_Error( 'wcic_environment', __( 'A live transaction was returned while the gateway is in test mode.', 'inline-checkout-for-woocommerce' ) );
 		}
 
 		if ( 'test' === $domain && ! $this->test_mode() ) {
-			return new WP_Error( 'wcic_environment', __( 'A test transaction was returned while the gateway is in live mode.', 'wc-inline-checkout' ) );
+			return new WP_Error( 'wcic_environment', __( 'A test transaction was returned while the gateway is in live mode.', 'inline-checkout-for-woocommerce' ) );
 		}
 
 		if ( 'success' !== ( $data['status'] ?? '' ) ) {
@@ -222,7 +222,7 @@ class WCIC_Paystack_Verifier extends WCIC_Verifier {
 				'wcic_declined',
 				sprintf(
 					/* translators: %s: transaction status reported by the gateway */
-					__( 'Paystack reported this transaction as %s.', 'wc-inline-checkout' ),
+					__( 'Paystack reported this transaction as %s.', 'inline-checkout-for-woocommerce' ),
 					sanitize_text_field( (string) ( $data['status'] ?? 'unknown' ) )
 				)
 			);
@@ -231,7 +231,7 @@ class WCIC_Paystack_Verifier extends WCIC_Verifier {
 		$currency = strtoupper( (string) ( $data['currency'] ?? '' ) );
 
 		if ( $currency !== strtoupper( $order->get_currency() ) ) {
-			return new WP_Error( 'wcic_currency', __( 'The payment currency does not match the order.', 'wc-inline-checkout' ) );
+			return new WP_Error( 'wcic_currency', __( 'The payment currency does not match the order.', 'inline-checkout-for-woocommerce' ) );
 		}
 
 		$paid     = (float) ( $data['amount'] ?? 0 );
@@ -242,7 +242,7 @@ class WCIC_Paystack_Verifier extends WCIC_Verifier {
 		}
 
 		if ( ! $this->amounts_match( $paid, $expected ) ) {
-			return new WP_Error( 'wcic_amount', __( 'The amount paid does not match the order total.', 'wc-inline-checkout' ) );
+			return new WP_Error( 'wcic_amount', __( 'The amount paid does not match the order total.', 'inline-checkout-for-woocommerce' ) );
 		}
 
 		return array(
@@ -283,7 +283,7 @@ class WCIC_Flutterwave_Verifier extends WCIC_Verifier {
 		$secret = $this->secret_key();
 
 		if ( ! $secret ) {
-			return new WP_Error( 'wcic_config', __( 'Flutterwave secret key is not configured.', 'wc-inline-checkout' ) );
+			return new WP_Error( 'wcic_config', __( 'Flutterwave secret key is not configured.', 'inline-checkout-for-woocommerce' ) );
 		}
 
 		$body = $this->get(
@@ -299,7 +299,7 @@ class WCIC_Flutterwave_Verifier extends WCIC_Verifier {
 		}
 
 		if ( 'success' !== ( $body['status'] ?? '' ) || empty( $body['data'] ) ) {
-			return new WP_Error( 'wcic_declined', __( 'Flutterwave did not recognise this transaction.', 'wc-inline-checkout' ) );
+			return new WP_Error( 'wcic_declined', __( 'Flutterwave did not recognise this transaction.', 'inline-checkout-for-woocommerce' ) );
 		}
 
 		$data = $body['data'];
@@ -309,14 +309,14 @@ class WCIC_Flutterwave_Verifier extends WCIC_Verifier {
 				'wcic_declined',
 				sprintf(
 					/* translators: %s: transaction status reported by the gateway */
-					__( 'Flutterwave reported this transaction as %s.', 'wc-inline-checkout' ),
+					__( 'Flutterwave reported this transaction as %s.', 'inline-checkout-for-woocommerce' ),
 					sanitize_text_field( (string) ( $data['status'] ?? 'unknown' ) )
 				)
 			);
 		}
 
 		if ( strtoupper( (string) ( $data['currency'] ?? '' ) ) !== strtoupper( $order->get_currency() ) ) {
-			return new WP_Error( 'wcic_currency', __( 'The payment currency does not match the order.', 'wc-inline-checkout' ) );
+			return new WP_Error( 'wcic_currency', __( 'The payment currency does not match the order.', 'inline-checkout-for-woocommerce' ) );
 		}
 
 		// Flutterwave reports both amount and amount_settled. Compare against
@@ -325,7 +325,7 @@ class WCIC_Flutterwave_Verifier extends WCIC_Verifier {
 		$expected = (float) $order->get_total();
 
 		if ( ! $this->amounts_match( $paid, $expected ) ) {
-			return new WP_Error( 'wcic_amount', __( 'The amount paid does not match the order total.', 'wc-inline-checkout' ) );
+			return new WP_Error( 'wcic_amount', __( 'The amount paid does not match the order total.', 'inline-checkout-for-woocommerce' ) );
 		}
 
 		return array(

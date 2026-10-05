@@ -1,8 +1,8 @@
 === Inline Checkout for WooCommerce ===
 Contributors: halleluyahsalako
-Tags: woocommerce, checkout, one page checkout, buy now, paystack, flutterwave
+Tags: woocommerce, checkout, paystack, flutterwave, payment gateway
 Requires at least: 6.0
-Tested up to: 6.7
+Tested up to: 7.1
 Requires PHP: 7.4
 Stable tag: 2.1.0
 License: GPLv2 or later
