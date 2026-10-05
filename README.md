@@ -42,6 +42,28 @@ A failed verification leaves the order unpaid and writes the reason into the ord
 
 **Fees.** Flutterwave reports both `amount` and `amount_settled`. Settlement is net of fees, so comparing against it would reject every legitimate payment. This compares `charged_amount`.
 
+**Environment mismatch.** Paystack reports whether a transaction belongs to the test or live environment. If test keys reach a production site, orders would otherwise complete on transactions that moved no money. This refuses in both directions.
+
+**Underpayment versus rounding.** The amount check is "not short" rather than "exactly equal", which is what Flutterwave's own guidance asks for. Converted currencies round, and a strict comparison rejects payments that were correct. An overpayment completes and leaves a note asking for the difference to be refunded.
+
+## Webhooks
+
+Payment confirmation does not depend on the customer's browser reaching your site. Both gateways can post directly to the plugin.
+
+- **Paystack** is authenticated by recomputing the HMAC SHA512 signature over the raw request body and comparing with `hash_equals`.
+- **Flutterwave** sends back a static secret hash, which proves the sender knows a password but says nothing about the payload. If no hash is configured the plugin returns 503 rather than comparing against an empty string and accepting anything.
+
+Either way the payload is not trusted for amounts. Every event triggers a fresh server to server verification, and the result of that is what completes the order.
+
+Repeat deliveries are expected. Paystack retries for up to 72 hours. Every event is recorded against a unique index, so the insert itself is the lock and an event delivered a dozen times completes an order once. Records older than 30 days are pruned daily.
+
+Endpoints:
+
+```
+/wp-json/wcic/v1/webhook/paystack
+/wp-json/wcic/v1/webhook/flutterwave
+```
+
 ## Requirements
 
 - WordPress 6.0+
